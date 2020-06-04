@@ -1,9 +1,15 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.urls import reverse_lazy
+from rest_framework.permissions import DjangoModelPermissions
+from rest_framework.response import Response
+from rest_framework.viewsets import ViewSet, ModelViewSet
 
+from church_site.permissions import CustomDjangoModelPermissions
 from church_site.views import AdminListView, BaseCreateView, BaseUpdateView
 
 from churches.models import Church
+from churches.permissions import IsMember
+from churches.serializers import ChurchSerializer
 
 
 class ChurchesAdminListView(PermissionRequiredMixin, AdminListView):
@@ -39,3 +45,24 @@ class ChurchesAdminUpdateView(PermissionRequiredMixin, BaseUpdateView):
 
     def get_queryset(self):
         return self.model.objects.filter(members=self.request.user)
+
+
+class ChurchViewSet(ModelViewSet):
+    queryset = Church.objects.none()
+    serializer_class = ChurchSerializer
+
+    def get_queryset(self):
+        if self.action == 'PUT':
+            return Church.objects.filter(members=self.request.user)
+        else:
+            return Church.objects.all()
+
+    def get_permissions(self):
+        print('Running permissions')
+        print(f'Permissions: {self.action}')
+        if self.action == 'update' or self.action == 'partial_update':
+            print('Running PUT')
+            permission_classes = [DjangoModelPermissions, IsMember]
+        else:
+            permission_classes = [DjangoModelPermissions]
+        return [permission() for permission in permission_classes]

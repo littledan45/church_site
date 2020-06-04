@@ -16,12 +16,20 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import TemplateView
+from rest_framework import routers
+
+from accounts.views import UserViewSet
+from churches.views import ChurchViewSet
+
+router = routers.DefaultRouter()
+router.register(r'api/v1/users', UserViewSet)
+router.register(r'api/v1/churches', ChurchViewSet)
 
 urlpatterns = [
     path('', include('home.urls')),
+    url(r'^', include(router.urls)),
     path('admin/', admin.site.urls),
-    url(r'^account/', include('allauth.urls')),
+    url(r'^api-auth/', include('rest_framework.urls')),
     path('accounts/', include('accounts.urls')),
     path('churches/', include('churches.urls')),
     path('speakers/', include('speakers.urls')),
